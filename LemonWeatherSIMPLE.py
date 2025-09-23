@@ -28,12 +28,14 @@ def clear():
 # define menu function
 def start():
     # welcome
-    print("Hello. Welcome to Weather!")
+    print("Hello. Welcome to LemonWeather SIMPLE!")
+    print("LemonWeather SIMPLE is a branch of the LemonWeather application that is very simple.")
     # create a menu
     print('MENU')
     print('1- Search By Location')
     print('2- View Last Search')
     print('3- Get Help')
+    print('4- Exit program')
 
 # Function to get current weather conditions and 5-day forecast
  
@@ -92,14 +94,18 @@ start()
 
 while True:
 
-    search= input('Please Enter A Menu Option Number(1-3): ')
+    search= input('Please Enter A Menu Option Number (1-4): ')
 
-    if search == str('1'):
+    if search == "1":
         search_location()
-    elif search == str('2'):
+    elif search == "2":
         view_past_searches()
-    elif search == str('3'):
+    elif search == "3":
         help()
+    elif search == "4":
+        print("Ending program like a good boy")
+        print("Program ended.")
+        exit()
     else:
         print('Please try again')
         start()
