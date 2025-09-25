@@ -1,7 +1,6 @@
-# to do: fix spelling error  for locatioo search --> if mispelt, allow user to retry.
+# to do: fix spelling error for location search --> if mispelt, allow user to retry.
 # save weather date/search. also print past searches
 # add more comments
-# readme file
 # check for errors+ handle gracefully
 
 #--------------------------------------------------------------
@@ -29,7 +28,7 @@ def clear():
 def start():
     # welcome
     print("Hello. Welcome to LemonWeather SIMPLE!")
-    print("LemonWeather SIMPLE is a branch of the LemonWeather application that is very simple.")
+    print("LemonWeather SIMPLE is a branch of the LemonWeather application that is very simple.\n")
     # create a menu
     print('MENU')
     print('1- Search By Location')
@@ -72,14 +71,14 @@ def get_weather(location):
 
 def search_location():
     # Ask user for location
-     location = input('Enter location: ')
-     # Get weather data
-     current_temp, current_weather, forecast = get_weather(location)
-     # Print current weather conditions
-     print(f'Current temperature: {current_temp}°C at {location}')
-     print(f'Current weather: {current_weather} at {location}')
-     #add to past searches
-     past_searches.append(location)
+    location = input('Enter location: ')
+    # Get weather data
+    current_temp, current_weather, forecast = get_weather(location)
+    # Print current weather conditions
+    print(f'Current temperature: {current_temp}°C at {location}')
+    print(f'Current weather: {current_weather} at {location}')
+    # add to past searches
+    past_searches.append(location)
 
 def view_past_searches():
     print(f'the past searches are {past_searches}')
@@ -94,7 +93,7 @@ start()
 
 while True:
 
-    search= input('Please Enter A Menu Option Number (1-4): ')
+    search= input('\nPlease Enter A Menu Option Number (1-4): ')
 
     if search == "1":
         search_location()

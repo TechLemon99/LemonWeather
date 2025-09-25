@@ -1,11 +1,9 @@
-# 11ASE_Task-1
- 
-# WWeather
+# LemonWeather
 A really basic weather app made with python that does not completely suck.
 
 ## Installation
 Clone the repository and navigate to the project directory:
-11ASE_Task-1/main/main.py
+LemonWeather/LemonWeather.py
 
 Then run the file after installing the dependencies in 'requirements.txt'.
 
