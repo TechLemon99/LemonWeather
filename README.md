@@ -1,5 +1,12 @@
 # LemonWeather
-A really basic weather app made with python that does not completely suck.
+Hello, and welcome to the official LemonWeather repository!
+There are currently 3 different versions of LemonWeather.
+
+**1.** LemonWeather - A really basic weather app made with python that does not completely suck.
+
+**2.** LemonWeather DELTA - LemonWeather, but basically in CLI.
+
+**3.** LemonWeather SIMPLE - The cheapest version of LemonWeather.
 
 ## Installation
 Clone the repository and navigate to the project directory:
