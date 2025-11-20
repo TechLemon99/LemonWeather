@@ -54,7 +54,7 @@ while running:
 
     current_temp, current_weather, country, forecast = get_weather(location)
 
-    # ✅ Handle invalid input gracefully
+    # Handle invalid input gracefully
     if current_temp is None:
         print(f"❌ Sorry, '{location}' is not a valid city name. Please try again.")
         continue
