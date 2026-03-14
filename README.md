@@ -2,9 +2,9 @@
 Hello, and welcome to the official LemonWeather repository!
 There are currently 3 different versions of LemonWeather.
 
-**1.** LemonWeather - A really basic weather app made with python that does not completely suck.
+**1.** LemonWeather+ - A highly advanced weather app with a functional GUI made with Python and Tkinter.
 
-**2.** LemonWeather DELTA - LemonWeather, but basically in CLI.
+**2.** LemonWeather - The standard package of LemonWeather, built into CLI.
 
 **3.** LemonWeather SIMPLE - The cheapest version of LemonWeather.
 

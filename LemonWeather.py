@@ -1,128 +1,188 @@
-# Creds: Alina Chudnova, @CursedToxic on GitHub
+# to do: fix spelling error for location search --> if mispelt, allow user to retry.
+# save weather date/search. also print past searches
+# add more comments
+# check for errors + handle gracefully
 
+#--------------------------------------------------------------
+
+# import libraries
+from os import system, name
 import requests
-from tkinter import *
-from tkinter import messagebox
-import tkinter as tk
-import ttkbootstrap
-from PIL import Image, ImageTk
+import json
+from difflib import get_close_matches  # <-- for fuzzy matching suggestions
 
-# Create a window in ttkbootstrap
-root = ttkbootstrap.Window(themename="morph")
-# Give the window a name
-root.title("LemonWeather")
-# Sets the resolution that the window will open at
-root.geometry("1024x768")
-# Set the minimum resolution or 'size' of the window
-root.minsize(width=800, height=500)
+#--------------------------------------------------------------
+past_searches = []
 
-# Global variable for unit preference
-use_fahrenheit = False  # Default to Celsius
+# API Key for OpenWeatherMap
+api_key = 'b3e591c701e61153944c341c2cef0278'  # <-- replace with your API key
 
-def toggle_units():
-    global use_fahrenheit
-    use_fahrenheit = not use_fahrenheit
-    unit_button.config(text="°F" if use_fahrenheit else "°C")
-    if city_entry.get():
-        search()
+#--------------------------------------------------------------
+# define clear function
+# an example of ‘integration’ and ‘non functional’ requirement
+# the user doesn’t have to choose mac or PC for this function.
 
-def get_weather(city):
-    """Fetch weather data from API"""
-    try:
-        units = "imperial" if use_fahrenheit else "metric"
-        api_key = "8f19c2c2e8a325a07b2c35bfe43d861b"
-        url = f'https://api.openweathermap.org/data/2.5/weather?q={city}&units={units}&APPID={api_key}'
-        res = requests.get(url, timeout=10)
-        
-        if res.status_code == 404:
-            messagebox.showerror("Error", "City Not Found")
-            return None
-        if res.status_code != 200:
-            messagebox.showerror("Error", f"API Error: {res.status_code}")
-            return None
-            
-        weather = res.json()
-        icon_id = weather["weather"][0]["icon"]
-        temperature = weather["main"]["temp"]
-        description = weather["weather"][0]["description"]
-        city = weather["name"]
-        country = weather["sys"]["country"]
+def clear():
+    # for windows
+    if name == 'nt':
+        _ = system('cls')
 
-        icon_url = f"https://openweathermap.org/img/wn/{icon_id}@2x.png"
-        return (icon_url, temperature, description, city, country)
-        
-    except requests.exceptions.RequestException as e:
-        messagebox.showerror("Error", f"Network Error: {str(e)}")
-        return None
+# define menu function
+def start():
+    # create a menu
+    print('\nMENU')
+    print('1- Search By Location')
+    print('2- View Last Search')
+    print('3- Get Help')
+    print('4- Exit program')
 
-def search(event=None):  # Added event parameter for Enter key binding
-    """Search for weather data"""
-    city = city_entry.get()
-    if not city:
-        messagebox.showwarning("Warning", "Please enter a city name")
-        return
+#--------------------------------------------------------------
+# Function to get current weather conditions and 5-day forecast
+def get_weather(location):
+    # API endpoints
+    current_weather_url = f'http://api.openweathermap.org/data/2.5/weather?q={location}&appid={api_key}&units=metric'
+    forecast_url = f'http://api.openweathermap.org/data/2.5/forecast?q={location}&appid={api_key}&units=metric'
 
-    result = get_weather(city)
-    if result is None:
-        return
+    # Make GET request to API
+    current_weather_response = requests.get(current_weather_url)
+    forecast_response = requests.get(forecast_url)
 
-    icon_url, temperature, description, city, country = result
-    location_label.configure(text=f"{city}, {country}")
+    # Parse JSON responses
+    current_weather_data = json.loads(current_weather_response.text)
+    forecast_data = json.loads(forecast_response.text)
 
-    try:
-        image = Image.open(requests.get(icon_url, stream=True).raw)
-        icon = ImageTk.PhotoImage(image)
-        icon_label.configure(image=icon)
-        icon_label.image = icon
-    except:
-        icon_label.configure(image='')
+    # ✅ Check for errors in current weather data
+    if str(current_weather_data.get("cod")) != "200":
+        return None, None, None
 
-    unit_symbol = "°F" if use_fahrenheit else "°C"
-    temperature_label.configure(text=f"Temperature: {temperature:.2f}{unit_symbol}")
-    description_label.configure(text=f"Description: {description.capitalize()}")
+    # Extract current weather conditions
+    current_temp = current_weather_data['main']['temp']
+    current_weather = current_weather_data['weather'][0]['description']
 
-def change_theme(event):
-    selected_theme = theme_menu.get()
-    root.style.theme_use(selected_theme)
+    # ✅ Handle forecast errors too
+    if str(forecast_data.get("cod")) != "200":
+        forecast = {}
+    else:
+        forecast_list = forecast_data['list']
+        forecast = {}
+        for f in forecast_list:
+            date = f['dt_txt'][:10]
+            if date not in forecast:
+                forecast[date] = {
+                    'temp': f['main']['temp'],
+                    'weather': f['weather'][0]['description']
+                }
 
-def resize_text(event):
-    new_font_size = max(20, int(event.width/30))  # More reasonable scaling
-    title_text.config(font=("Helvetica", new_font_size))
+    return current_temp, current_weather, forecast
 
-# GUI Setup
-title_text = tk.Label(root, text="LemonWeather", font=("Helvetica", 36))
-title_text.pack(expand=True, fill=tk.BOTH, pady=5)
+#--------------------------------------------------------------
+# Prompt user for city name and handle errors / retries
+def search_location():
+    while True:
+        # Ask for initial city name
+        location = input("Enter location: ").strip()
 
-search_frame = ttkbootstrap.Frame(root)
-search_frame.pack(pady=10)
+        # Inner loop: repeat for new searches without re-asking "Enter location:"
+        while True:
+            # ✅ Try to get weather data for the given location
+            current_temp, current_weather, forecast = get_weather(location)
 
-city_entry = ttkbootstrap.Entry(search_frame, font="Helvetica, 18")
-city_entry.pack(side=LEFT, padx=5)
+            # ❌ If city is invalid, suggest closest match or retry
+            if current_temp is None:
+                print(f"❌ Sorry, '{location}' is not a valid city name.\n")
 
-search_button = ttkbootstrap.Button(search_frame, text="Search", command=search, bootstyle="warning")
-search_button.pack(side=LEFT, padx=5)
+                # Optional fuzzy suggestion based on last searches
+                if past_searches:
+                    suggestion = get_close_matches(location, past_searches, n=1, cutoff=0.6)
+                    if suggestion:
+                        print(f"💡 Did you mean '{suggestion[0]}'?")
 
-unit_button = ttkbootstrap.Button(search_frame, text="°C/°F", command=toggle_units, bootstyle="info")
-unit_button.pack(side=LEFT, padx=5)
+                # Prompt user to try again or go back
+                choice = input("↩️  Enter another location or press 'm' to return to the main menu: ").strip().lower()
+                if choice == 'm':
+                    return  # Go back to menu
+                else:
+                    # ✅ Use the new city name directly without re-prompting "Enter location:"
+                    location = choice
+                    continue
 
-location_label = tk.Label(root, font="Helvetica, 25")
-location_label.pack(pady=20)
+            else:
+                # ✅ Extract country from API response
+                # Get country from forecast if available, otherwise set to 'Unknown'
+                country = 'Unknown'
+                # Try to get country from forecast (since get_weather does not return country)
+                # We'll make a new API call to get country info
+                try:
+                    current_weather_url = f'http://api.openweathermap.org/data/2.5/weather?q={location}&appid={api_key}&units=metric'
+                    current_weather_response = requests.get(current_weather_url)
+                    current_weather_data = json.loads(current_weather_response.text)
+                    country = current_weather_data.get('sys', {}).get('country', 'Unknown')
+                except Exception:
+                    country = 'Unknown'
 
-icon_label = tk.Label(root)
-icon_label.pack()
+                # ✅ Display current weather
+                print(f'\nCurrent temperature in {location.title()}, {country}: {current_temp}°C')
+                print(f'Current weather in {location.title()}, {country}: {current_weather}')
 
-temperature_label = tk.Label(root, font="Helvetica, 20")
-temperature_label.pack()
+                # ✅ Display 5-day forecast
+                print("\n5-day forecast:")
+                for date, weather in forecast.items():
+                    print(f'{date} - Temperature: {weather["temp"]}°C, Weather: {weather["weather"]}')
 
-description_label = tk.Label(root, font="Helvetica, 20")
-description_label.pack()
+                # ✅ Save successful search
+                past_searches.append(location.title())
 
-theme_menu = ttkbootstrap.Combobox(root, values=root.style.theme_names(), state="readonly")
-theme_menu.set("Select Theme")
-theme_menu.bind("<<ComboboxSelected>>", change_theme)
-theme_menu.pack(pady=20)
+                # ✅ Ask if user wants to search again or return
+                choice = input("\n🔄 Enter another location or press 'm' to return to the main menu: ").strip().lower()
+                if choice == 'm':
+                    return  # Return to menu
+                else:
+                    # ✅ Immediately search the new city — no duplicate prompt
+                    location = choice
+                    continue
 
-# Proper Enter key binding
-root.bind('<Return>', lambda event: search())
+#--------------------------------------------------------------
+# Show list of past searches
+def view_past_searches():
+    if past_searches:
+        print("\n📜 Past searches:")
+        for city in past_searches:
+            print(f" - {city}")
+    else:
+        print("No past searches yet.")
 
-root.mainloop()
+#--------------------------------------------------------------
+# Help section (placeholder)
+def help():
+    print("\n📘 HELP:")
+    print("1. Enter '1' to search by city name.")
+    print("2. Enter '2' to view your previous searches.")
+    print("3. Enter '3' to read this help guide.")
+    print("4. Enter '4' to exit the program.")
+    print("Tip: Make sure city names are spelled correctly (e.g., 'Sydney', 'New York')")
+
+#--------------------------------------------------------------
+# main loop
+clear()
+
+# welcome message
+print("Hello. Welcome to LemonWeather!")
+
+start()
+
+while True:
+    search = input('\nPlease Enter A Menu Option Number (1-4): ').strip()
+
+    if search == "1":
+        search_location()
+        start()  # <-- Re-show menu after returning from search
+    elif search == "2":
+        view_past_searches()
+    elif search == "3":
+        help()
+    elif search == "4":
+        print("Ending program like a good boy")
+        print("Program ended.")
+        exit()
+    else:
+        print("❌ Invalid choice. Please enter a number between 1 and 4.")
